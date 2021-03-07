@@ -16,7 +16,7 @@ import (
 
 func main() {
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "usage: bench [-cpuprofile] map|counter\n")
+		fmt.Fprintf(os.Stderr, "usage: bench [-cpuprofile] map|mappointer|counter\n")
 		flag.CommandLine.PrintDefaults()
 	}
 	cpuprofile := flag.Bool("cpuprofile", false, "create a CPU profile")
@@ -45,6 +45,9 @@ func main() {
 	switch mode {
 	case "map":
 		doMap()
+
+	case "mappointer":
+		doMapPointer()
 
 	case "counter":
 		doCounter()
@@ -121,6 +124,82 @@ func doMap() {
 type Count struct {
 	Word  string
 	Count int
+}
+
+func doMapPointer() {
+	offset := 0
+	buf := make([]byte, 64*1024)
+	counts := make(map[string]*int)
+	for {
+		n, err := os.Stdin.Read(buf[offset:])
+		if err != nil && err != io.EOF {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		if n == 0 {
+			break
+		}
+		chunk := buf[:offset+n]
+		lastLF := bytes.LastIndexByte(chunk, '\n')
+		process := chunk
+		if lastLF != -1 {
+			process = chunk[:lastLF]
+		}
+
+		start := -1
+		for i, c := range process {
+			if c >= 'A' && c <= 'Z' {
+				c = c + ('a' - 'A')
+				process[i] = c
+			}
+			if start >= 0 {
+				if c == ' ' || c == '\n' {
+					word := process[start:i]
+					p, ok := counts[string(word)]
+					if ok {
+						*p++
+					} else {
+						n := 1
+						counts[string(word)] = &n
+					}
+					start = -1
+				}
+			} else {
+				if c != ' ' && c != '\n' {
+					start = i
+				}
+			}
+		}
+		if start >= 0 && start < len(process) {
+			word := process[start:]
+			p, ok := counts[string(word)]
+			if ok {
+				*p++
+			} else {
+				n := 1
+				counts[string(word)] = &n
+			}
+		}
+
+		if lastLF == -1 {
+			offset = 0
+		} else {
+			remaining := chunk[lastLF+1:]
+			copy(buf, remaining)
+			offset = len(remaining)
+		}
+	}
+
+	var ordered []Count
+	for word, count := range counts {
+		ordered = append(ordered, Count{word, *count})
+	}
+	sort.Slice(ordered, func(i, j int) bool {
+		return ordered[i].Count > ordered[j].Count
+	})
+	for _, count := range ordered {
+		fmt.Println(string(count.Word), count.Count)
+	}
 }
 
 func doCounter() {

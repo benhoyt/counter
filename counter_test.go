@@ -86,6 +86,50 @@ func BenchmarkNonUniqueMapBytes(b *testing.B) {
 	}
 }
 
+func BenchmarkMostlyUniqueMapPointerBytes(b *testing.B) {
+	words := make([][]byte, numWords)
+	for i := 0; i < numWords; i++ {
+		words[i] = randomChars(wordLen)
+	}
+	counts := make(map[string]*int)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		for wi := 0; wi < numWords; wi++ {
+			word := words[wi]
+			p, ok := counts[string(word)]
+			if ok {
+				*p++
+			} else {
+				n := 1
+				counts[string(word)] = &n
+			}
+		}
+	}
+}
+
+func BenchmarkNonUniqueMapPointerBytes(b *testing.B) {
+	words := make([][]byte, numWords/10)
+	for i := 0; i < numWords/10; i++ {
+		words[i] = randomChars(wordLen)
+	}
+	counts := make(map[string]*int)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		for wi := 0; wi < numWords/10; wi++ {
+			for j := 0; j < 10; j++ {
+				word := words[wi]
+				p, ok := counts[string(word)]
+				if ok {
+					*p++
+				} else {
+					n := 1
+					counts[string(word)] = &n
+				}
+			}
+		}
+	}
+}
+
 func BenchmarkMostlyUniqueMapString(b *testing.B) {
 	words := make([]string, numWords)
 	for i := 0; i < numWords; i++ {

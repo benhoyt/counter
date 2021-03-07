@@ -20,6 +20,12 @@ do
   time ./bench map <kjvbible_x10.txt >/dev/null
 done
 
+echo Benchmarking map pointer version
+for i in {1..5}
+do
+  time ./bench mappointer <kjvbible_x10.txt >/dev/null
+done
+
 echo Benchmarking counter version
 for i in {1..5}
 do

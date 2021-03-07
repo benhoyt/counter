@@ -1,4 +1,6 @@
 
+**[See update below about `map[string]*int`](#update).**
+
 Fast hash table for counting short strings in Go. Seems to be almost twice as fast for counting unique words in a text file:
 
 ```
@@ -63,13 +65,23 @@ goos: linux
 goarch: amd64
 pkg: github.com/benhoyt/counter
 cpu: Intel(R) Core(TM) i7-6700HQ CPU @ 2.60GHz
-BenchmarkMostlyUniqueCounter-8          3072        340033 ns/op
-BenchmarkNonUniqueCounter-8             5718        200205 ns/op
-BenchmarkMostlyUniqueMapBytes-8         1335        789635 ns/op
-BenchmarkNonUniqueMapBytes-8            2317        495804 ns/op
-BenchmarkMostlyUniqueMapString-8        2834        429449 ns/op
-BenchmarkNonUniqueMapString-8           7146        176765 ns/op
+BenchmarkMostlyUniqueCounter-8                  3282        335023 ns/op
+BenchmarkNonUniqueCounter-8                     6165        189510 ns/op
+BenchmarkMostlyUniqueMapBytes-8                 1286        784230 ns/op
+BenchmarkNonUniqueMapBytes-8                    2073        490583 ns/op
+BenchmarkMostlyUniqueMapString-8                2982        413664 ns/op
+BenchmarkNonUniqueMapString-8                   5697        186769 ns/op
 PASS
-ok      github.com/benhoyt/counter  7.173s
+ok      github.com/benhoyt/counter  11.916s
 ```
 
+## Update
+
+Martin Moehrmann on the Gophers slack #performance channel showed me you could use a `map[string]*int` to avoid an allocation/copy on every increment, and only on new insertions (just like `Counter` does). Benchmarks:
+
+```
+BenchmarkMostlyUniqueMapPointerBytes-8          2624        465474 ns/op
+BenchmarkNonUniqueMapPointerBytes-8             5240        230295 ns/op
+```
+
+I think this is fast enough / close enough to the `Counter` version and so `Counter` probably isn't worth it. Well, it's still good to know it's easy to create your own hash table if you need to. It was fun while it lasted!
