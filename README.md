@@ -1,6 +1,8 @@
 
 **[See update below about `map[string]*int`](#update).**
 
+**Note: I didn't intend this code for real use, and haven't tested it thoroughly or anything. Consider it alpha. Feel free to use the ideas, but probably don't use it as is in production.**
+
 Fast hash table for counting short strings in Go. Seems to be almost twice as fast for counting unique words in a text file:
 
 ```
